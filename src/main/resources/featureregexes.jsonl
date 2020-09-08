@@ -1,0 +1,3 @@
+{"name":"tryto","regex":"<postag=previous([NN,NNP,PRP,NNPS]) & postag=[VB,VBS,VBG] & postag=next([NN,NNP,PRP,NNPS])>"}
+{"name":"cause","regex":"<postag=previous([NN,NNP,PRP,NNPS]) & postag=[VB,VBS,VBG] & postag=next([NN,NNP,PRP,NNPS])>"}
+{"name":"surely","regex":"<postag=previous([NN,NNP,PRP,NNPS]) & postag=[VB,VBS,VBG] & postag=next([NN,NNP,PRP,NNPS])>"}

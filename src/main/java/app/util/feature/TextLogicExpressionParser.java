@@ -1,4 +1,4 @@
-package glib.app.textanalysis;
+package app.util.feature;
 
 import edu.washington.cs.knowitall.logic.Expression.Arg;
 import edu.washington.cs.knowitall.logic.LogicExpressionParser;

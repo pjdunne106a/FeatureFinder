@@ -1,4 +1,4 @@
-packageapp.util.feature;
+package app.util.feature;
 
 import java.util.ArrayList;
 import java.util.Arrays;

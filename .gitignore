@@ -4,3 +4,4 @@
 .project
 # Maven 
 target/
+bin/

@@ -1,4 +1,4 @@
-package glib.app.textanalysis;
+package app.util.feature;
 
 import edu.washington.cs.knowitall.regex.Expression.BaseExpression;
 import edu.washington.cs.knowitall.regex.RegularExpressionParser;

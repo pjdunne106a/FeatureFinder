@@ -11,14 +11,20 @@ import java.util.Map;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Component;
 import org.springframework.web.context.WebApplicationContext;
 
+@Component
 public class FeatureStorage {
 	private static final String DEFINED_REGEX_FILE = "definedregexes.jsonl";
 	private static final String DEFINED_LIST_FILE = "definedlists.jsonl";
 	private static final String FEATURE_REGEX_FILE = "featureregexes.jsonl";
 	private static final String GROUP_REGEX_FILE = "featuregroups.jsonl";
 	private WebApplicationContext applicationContext;
+	
+	public FeatureStorage() {
+		
+	}
 
 	public FeatureStorage(WebApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
@@ -48,6 +54,12 @@ public class FeatureStorage {
 		return featureMap;
 	}
 	
+	public Map<String, Object> readGroupsList() {
+		Map<String, Object> featureMap = new HashMap<>();
+		this.readResource(GROUP_REGEX_FILE, featureMap);
+		return featureMap;
+	}
+	
 	public Map<String, Object> readResource(String filename, Map<String, Object> resourceMap) {
 		BufferedReader bufferedReader=null;
 		JSONParser parser = new JSONParser();
@@ -67,11 +79,12 @@ public class FeatureStorage {
 				 lines.add(line);
 				 line = bufferedReader.readLine();
 			 }
-			 lines.forEach(item -> this.addToMap(parser, featureMap, item));
+			 lines.forEach(item -> this.addToMap(parser, resourceMap, item));
 			 bufferedReader.close();
 			 inputStreamReader.close();
              System.out.println("Lines"+lines.size());
-		} catch (Exception exception) {
+             System.out.println("Keys:"+resourceMap.keySet());
+		} catch (Exception exception) { 
 			exception.printStackTrace();
 		}
 		return featureMap;
@@ -82,7 +95,7 @@ public class FeatureStorage {
 		try {
 			 jsonObject = (JSONObject)jsonParser.parse(jsonLine);
    		     String name = (String)jsonObject.get("name");
-		     featureMap.put(name, jsonObject.get("regex"));
+		     featureMap.put(name, jsonObject);
 	       } catch (Exception exception) {
 		        exception.printStackTrace();
 	       }

@@ -16,6 +16,12 @@ import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.CoreDocument;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.ling.CoreAnnotations;
+import edu.stanford.nlp.pipeline.Annotation;
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.semgraph.SemanticGraph;
+import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations;
+import edu.stanford.nlp.util.CoreMap;
 
 @Component
 public class EnglishParser {
@@ -29,15 +35,33 @@ public class EnglishParser {
 		 stanfordParser = new StanfordCoreNLP(props);
 	}
 	
+	
+	
+	
 	 @PostConstruct
 	 private void init() {
 		 Properties props = new Properties();
 		 InputStream stream = null;
 		// props.setProperty("annotators", "tokenize,ssplit,pos,lemma,ner,parse,depparse,coref,kbp,quote");
-		 props.setProperty("annotators", "tokenize,ssplit,pos,lemma,parse");
+		 props.setProperty("annotators", "tokenize,ssplit,pos,lemma,parse,depparse");
+		 props.setProperty("tokenize.options", "ptb3Escaping=false");
+	     props.setProperty("parse.maxlen", "10000");
+	     props.setProperty("depparse.extradependencies", "SUBJ_ONLY");
 		 props.setProperty("coref.algorithm", "neural");
 		 stanfordParser = new StanfordCoreNLP(props);
 	    }
+	 
+	  public String textToGraph(String text) {
+		 String graphString="";
+		 Annotation document = new Annotation(text);
+		 stanfordParser.annotate(document);
+		 CoreMap sentence = document.get(CoreAnnotations.SentencesAnnotation.class).get(0);
+		 SemanticGraph dependency_graph = sentence.get(SemanticGraphCoreAnnotations.CollapsedCCProcessedDependenciesAnnotation.class);
+		 graphString = dependency_graph.toString(SemanticGraph.OutputFormat.LIST);
+		 return graphString;
+	  }	
+		
+		 
 	
 	public Section parseTextToSentence(String text) {
 		CoreDocument document=null;
@@ -45,7 +69,7 @@ public class EnglishParser {
 		Integer sentenceIndex=0;
 		List<CoreLabel> coreLabelList=null;
 		Section section = new Section();
-		String lemma, tag, token, sentence, endofline;
+		String lemma, tag, token, dependency, sentence, endofline, graphOfText;
 		List<WordToken> wordTokenList = null;
 		List<Map<String,String>> sentences = this.getSentences(text);
 		WordToken wordToken=null;
@@ -54,6 +78,8 @@ public class EnglishParser {
 			endofline = sentenceMap.get(sentence);
 			document = new CoreDocument(sentence);
 			stanfordParser.annotate(document);
+			graphOfText = this.textToGraph(sentence); 
+			// graphOfText = "Tester";
 			coreLabelList = document.tokens();
 			wordTokenList = new ArrayList<>();
 			wordIndex = 0;
@@ -61,14 +87,15 @@ public class EnglishParser {
 				tag = label.get(CoreAnnotations.PartOfSpeechAnnotation.class);
 				token = label.get(CoreAnnotations.TextAnnotation.class);
 				lemma = label.get(CoreAnnotations.LemmaAnnotation.class);
+				dependency = this.getDependency(token, wordIndex+1, graphOfText);
 				// System.out.println("Lemma:"+lemma+"  tag:"+tag+"  token:"+token);
-				wordToken = new WordToken(token, lemma, tag, wordIndex, sentenceIndex);
+				wordToken = new WordToken(token, lemma, tag, dependency, wordIndex, sentenceIndex);
 				wordIndex = wordIndex +1;
 				wordTokenList.add(wordToken);
 			}
 			endofline=endofline.trim();
 			if (endofline.length()>0) {
-			   wordToken = new WordToken(endofline, endofline, endofline, wordIndex, sentenceIndex);
+			   wordToken = new WordToken(endofline, endofline, endofline, " ", wordIndex, sentenceIndex);
 			   wordTokenList.add(wordToken);
 			}
 			sentenceIndex = sentenceIndex+1;
@@ -83,7 +110,7 @@ public class EnglishParser {
 		Integer sentenceIndex=0;
 		List<CoreLabel> coreLabelList=null;
 		Section section = new Section();
-		String lemma, tag, token, sentence, endofline;
+		String lemma, tag, token, dependency, sentence, endofline, graphOfText;
 		List<WordToken> wordTokenList = null;
 		List<Map<String,String>> sentences = this.getSentences(text);
 		WordToken wordToken=null;
@@ -94,24 +121,46 @@ public class EnglishParser {
 			document = new CoreDocument(sentence);
 			stanfordParser.annotate(document);
 			coreLabelList = document.tokens();
+			graphOfText = this.textToGraph(sentence); 
 			wordIndex = 0;
 			for (CoreLabel label:coreLabelList) {
 				tag = label.get(CoreAnnotations.PartOfSpeechAnnotation.class);
 				token = label.get(CoreAnnotations.TextAnnotation.class);
 				lemma = label.get(CoreAnnotations.LemmaAnnotation.class);
+				dependency = this.getDependency(token, wordIndex+1, graphOfText);
 				// System.out.println("Lemma:"+lemma+"  tag:"+tag+"  token:"+token);
-				wordToken = new WordToken(token, lemma, tag, wordIndex, sentenceIndex);
+				wordToken = new WordToken(token, lemma, tag, dependency, wordIndex, sentenceIndex);
 				wordIndex = wordIndex +1;
 				wordTokenList.add(wordToken);
 			}
 			endofline=endofline.trim();
 			if (endofline.length()>0) {
-			   wordToken = new WordToken(endofline, endofline, endofline, wordIndex, sentenceIndex);
+			   wordToken = new WordToken(endofline, endofline, endofline, " ", wordIndex, sentenceIndex);
 			   wordTokenList.add(wordToken);
 			}
 		}
 		section.addSentence(wordTokenList);
 		return section;
+	}
+	
+	public String getDependency(String token, Integer wordIndex, String graphOfText) {
+		Boolean found = false;
+		String strToMatch = ", " + token + "-" + wordIndex.toString() + ")", line="", dependency=""; 
+		String[] lines = graphOfText.split("\n");
+		Integer index=0, position=0;
+		while ((!found) && (index<lines.length)) {
+			line = lines[index];
+			position = line.indexOf(strToMatch);
+			if (position>0) {
+				found = true;
+				position = line.indexOf("(");
+				if (position>1) {
+					dependency = line.substring(0, position);
+				}
+			}
+			index = index + 1;
+		}
+	   return dependency;	
 	}
 	
 	public List<Map<String,String>> getSentences(String text) {

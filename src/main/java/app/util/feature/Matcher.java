@@ -9,8 +9,8 @@ public class Matcher {
 	private RegexHandler regexHandler;
 	private WordStorage wordStorage;
 	
-	public Matcher(String regex, RegularFunction regularFunction, WordStorage wordStorage, LanguageTree languageTree, WebApplicationContext applicationContext) {
-		 this.regexHandler = new RegexHandler(regex, regularFunction, wordStorage, languageTree, applicationContext);
+	public Matcher(String regex, RegularFunction regularFunction, WordStorage wordStorage, LanguageTree languageTree, RegexLibrary regexLibrary, WebApplicationContext applicationContext) {
+		 this.regexHandler = new RegexHandler(regex, regularFunction, wordStorage, languageTree, regexLibrary,  applicationContext);
 		 this.wordStorage = wordStorage;
 	}
 
@@ -65,7 +65,7 @@ public class Matcher {
 		 WordStorage wordStorage =null;
 		 RegularFunction regularFunction = new RegularFunction();
 		 Section section = englishParser.parseTextToSentence("Try to see why this works");
-		 Matcher matched = new Matcher("<token='Try'><token='to'><postag=['VB','VBD']>", regularFunction, wordStorage, null, applicationContext);
+		 Matcher matched = new Matcher("<token='Try'><token='to'><postag=['VB','VBD']>", regularFunction, wordStorage, null,null, applicationContext);
 		 Integer number = matched.matchcount(section,"sentence");
 		 System.out.println("**Matched:"+number);
 	}

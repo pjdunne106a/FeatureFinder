@@ -4,13 +4,15 @@ public class WordToken {
 	private String postag;
 	private String token;
 	private String lemma;
+	private String dependency;
 	private Integer index;
 	private Integer sentence;
 
-	public WordToken(String token, String lemma, String postag, Integer index, Integer sentence) {
+	public WordToken(String token, String lemma, String postag, String dependency, Integer index, Integer sentence) {
 		this.token = token;
 		this.lemma = lemma;
 		this.postag = postag;
+		this.dependency = dependency;
 		this.setIndex(index);
 		this.setSentence(sentence);
 	}
@@ -38,6 +40,14 @@ public class WordToken {
 	public void setLemma(String lemma) {
 		this.lemma = lemma;
 	}
+	
+	public String getDependency() {
+		return dependency;
+	}
+
+	public void setDependency(String dependency) {
+		this.dependency = dependency;
+	}
 
 	public Integer getIndex() {
 		return index;
@@ -56,7 +66,7 @@ public class WordToken {
 	}
 	
 	public String toString() {
-		return ("token:"+token+" lemma:"+lemma+" tag:"+postag+" index:"+index);
+		return ("token:"+token+" lemma:"+lemma+" tag:"+postag+" dependency:"+dependency+" index:"+index);
 	}
 
 }

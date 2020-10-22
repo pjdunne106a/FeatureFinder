@@ -88,6 +88,22 @@ public class PostagSearch {
 		return ispostag;
 	}
 	
+	public boolean isNoun(String postag) {
+		Boolean ispostag=false;
+		String postagType="";
+		String[] parts = null;
+		String postagItem="";
+		postagItem = postagMap.get(postag);
+		if (postagItem != null) {
+		    parts = postagItem.split(":");
+		    postagType = parts[0];
+		    if ((postagType!=null) && (postagType.equalsIgnoreCase("noun"))) {
+			    ispostag = true;
+		    }    
+		}
+		return ispostag;
+	}
+	
 	public boolean isTo(String postag) {
 		Boolean ispostag=false;
 		String postagType="";
@@ -114,6 +130,22 @@ public class PostagSearch {
 			parts = postagItem.split(":");
 			postagType = parts[0];
 			if ((postagType!=null) && (postagType.equalsIgnoreCase("adjective"))) {
+				isverb= true;
+			}
+		}
+		return isverb;
+	}
+	
+	public boolean isDeterminer(String postag) {
+		Boolean isverb=false;
+		String postagType="";
+		String[] parts = null;
+		String postagItem="";
+		postagItem = postagMap.get(postag);
+		if (postagItem != null) {
+			parts = postagItem.split(":");
+			postagType = parts[0];
+			if ((postagType!=null) && (postagType.equalsIgnoreCase("determiner"))) {
 				isverb= true;
 			}
 		}

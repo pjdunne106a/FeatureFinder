@@ -7,7 +7,7 @@ import java.util.List;
 import edu.washington.cs.knowitall.logic.Expression.Arg;
 
 public class CustomLogicBaseExpression extends Arg<WordToken> {
-	   private static String[] PART_LIST = {"postag","POSTAG","token","TOKEN","lemma","LEMMA","text","TEXT"};
+	   private static String[] PART_LIST = {"postag","POSTAG","token","TOKEN","lemma","LEMMA","type","TYPE","text","TEXT"};
        private String part;
        private String value;
        private String valueType;
@@ -257,6 +257,8 @@ public class CustomLogicBaseExpression extends Arg<WordToken> {
     		  content = wordToken.getToken();
     	  } else if (part.equalsIgnoreCase("lemma")) {
     		  content = wordToken.getLemma();
+    	  } else if (part.equalsIgnoreCase("type")) {
+    		  content = wordToken.getDependency();
     	  } 
     	  params = General.getListParameters(value);
     	  content = General.removeQuotes(content);

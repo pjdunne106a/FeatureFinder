@@ -5,11 +5,42 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 @Component
 public class RegularFunction {
+	public static String[] FUNCTION_FEATURES= {"active:identifies whether a word is an active verb:function:none:function",
+			                                   "actionverb:identifies whether a word is an action verb:function:none:function",
+			                                   "auxiliary:identifies whether a word is an auxiliary verb:function:none:function",
+			                                   "auxiliaryverb:identifies whether a word is an auxiliary verb:function:none:function",
+			                                   "anyword:represents any generic word:function:none:function",
+			                                   "conjunction:identifies whether a phrase is a conjunction:function:none:function",
+			                                   "commonword:identifies whether a word is present in the list of common words:list:none:list",
+			                                   "causative:identifies whether a phrase is a causative:function:none:function",
+			                                   "coordinatingconjunction:identifies whether a phrase is a coordinating conjunction:function:none:function",
+			                                   "startswith:identifies whether a word starts with a known sequence of letters:function:none:function",
+			                                   "endswith:identifies whether a word ends with a known sequence of letters:function:none:function",
+			                                   "futuretense:identifies whether a phrase is in the future tense:function:none:function",
+			                                   "gerund:identifies whether a word is a gerund:function:none:function",
+			                                   "intransitiveverb:identifies whether a word is an intransitive verb:function:none:function",
+			                                   "irregularverb:identifies whether a word is an irregular word:function:none:function",
+			                                   "notcommonword:identifies whether a word is not int he list of common words:function:none:function",
+			                                   "notregularword:identifies whether a word is not in the list of regular words:function:none:function",
+			                                   "object:identifies whether a word is classed as an object:function:none:function",
+			                                   "perfectpasttense:identifies whether a phrase is in the perfect past tense:function:none:function",
+			                                   "pastparticiple:identifies whether a word is a past participle:function:none:function",
+			                                   "preposition:identifies whether a phrase is a preposition:function:none:function",
+			                                   "passive:identifies whether a phrase is a passive phrase:function:none:function",
+			                                   "notprevious:identifies whether a word is nor preceded by another word:function:none:function",
+			                                   "next:identifies whether a word is followed bby another word:function:none:function",
+			                                   "notnext:identifies whether a word is not followd by another word:function:none:function",
+			                                   "regularword:identifies whether a word is in the rgular list of words:list:none:list",
+			                                   "subject:identifies whether a word can be classed as a subject:function:none:function",
+			                                   "transitiveverb:identifies whether a word is a transitive verb:function:none:function",
+			                                   "validwithoutprefix:identifies whether a word is still a known word with any prefix removed:function:none:function",
+			                                   "verblinked:identifies whether a word islinked to a verb:function:none:function",
+			                                   "verb:identifies whether a word is a verb:function:none:function"};
+	
 	private WordStorage wordStorage;
 	private LanguageTree languageTree;
 
@@ -58,6 +89,11 @@ public class RegularFunction {
 		}
 			;
 			break;
+		case "causative": {
+			found = this.causative(part, wordToken, section, parameters);
+		}
+			;
+			break;
 		case "coordinatingconjunction": {
 			found = this.coordinatingconjunction(part, wordToken, section, parameters);
 		}
@@ -83,6 +119,11 @@ public class RegularFunction {
 		}
 			;
 			break;
+		case "intransitiveverb": {
+			found = this.intransitiveverb(part, wordToken, section, parameters);
+		}
+			;
+			break;	
 		case "notcommonword": {
 			found = notcommonword(part, wordToken, parameters);
 		}
@@ -133,6 +174,11 @@ public class RegularFunction {
 		}
 			;
 			break;
+		case "transitiveverb": {
+			found = this.transitiveverb(part, wordToken, section, parameters);
+		}
+			;
+			break;		
 		case "validwithoutprefix": {
 			found = this.validwithoutprefix(part, wordToken, section, parameters);
 		}
@@ -143,9 +189,15 @@ public class RegularFunction {
 		}
 			;
 			break;	
+	
 		default: {
-			System.out.println("  Name:"+name+"  Postag:"+wordToken.getPostag()+"   Reply:"+found);
-			if (name.contains(":")) {
+			System.out.println("  Name:"+name+"  Postag:"+wordToken.getPostag()+"  Token:"+wordToken.getToken()+"   Reply:"+found);
+			if (wordStorage.listExists(name)) {
+				description = this.getValue(part, wordToken);
+				if (wordStorage.wordExists(name, description)) {
+					found = true;
+				}
+			} else if (name.contains(":")) {
 				parts = name.split(":");
 				name = parts[0];
 				description = parts[1];
@@ -198,7 +250,61 @@ public class RegularFunction {
                 found = true;
 			}
       return found; 			
-	}	
+	}
+	
+	protected boolean transitiveverb(String part, WordToken wordToken, Section section, List<String> parameters) {
+		String content = this.getValue("postag", wordToken);
+		WordToken nextToken=null;
+		Integer wordIndex = wordToken.getIndex();
+		Boolean found = false;
+		Boolean isVerb = false;
+		if (wordStorage.getPostagSearch().isPostag(content,"verb")) {
+            isVerb = true;
+		}
+		if ((isVerb) && ((wordIndex+1)<section.getWordLimit())) {
+ 			nextToken = section.getCurrentSentence().get(wordIndex +1);
+ 			content = this.getValue("postag", nextToken);
+ 			if (wordStorage.getPostagSearch().isDeterminer(content)) {
+ 				if ((wordIndex+2)<section.getWordLimit()) {
+ 					nextToken = section.getCurrentSentence().get(wordIndex + 2);
+ 					content = this.getValue("postag", nextToken);
+ 					if (wordStorage.getPostagSearch().isPostag(content,"noun")) {
+ 		                found = true;
+ 				}
+			} else if (wordStorage.getPostagSearch().isPostag(content,"noun")) {
+                found = true;
+			}
+ 		}
+	   }	
+	   return found;	
+	}
+	
+	protected boolean intransitiveverb(String part, WordToken wordToken, Section section, List<String> parameters) {
+		String content = this.getValue("postag", wordToken);
+		WordToken nextToken=null;
+		Integer wordIndex = wordToken.getIndex();
+		Boolean found = false;
+		Boolean isVerb = false;
+		if (wordStorage.getPostagSearch().isPostag(content,"verb")) {
+            isVerb = true;
+		}
+		if ((isVerb) && ((wordIndex+1)<section.getWordLimit())) {
+ 			nextToken = section.getCurrentSentence().get(wordIndex +1);
+ 			content = this.getValue("postag", nextToken);
+ 			if (wordStorage.getPostagSearch().isDeterminer(content)) {
+ 				if ((wordIndex+2)<section.getWordLimit()) {
+ 					nextToken = section.getCurrentSentence().get(wordIndex + 2);
+ 					content = this.getValue("postag", nextToken);
+ 					if (!wordStorage.getPostagSearch().isPostag(content,"noun")) {
+ 		                found = true;
+ 				}
+			} else if (!wordStorage.getPostagSearch().isPostag(content,"noun")) {
+                found = true;
+			}
+ 		}
+	   }	
+	   return found;	
+	}
 
 	protected boolean startsWith(String part, WordToken wordToken, List<String> params) {
 		boolean found = false;
@@ -235,7 +341,7 @@ public class RegularFunction {
 		content = General.removeQuotes(content);
 		if ((content != null) && (content.length() > 0)) {
 			content = content.toLowerCase();
-			if (wordStorage.wordExists(wordStorage.COMMON_WORDS, content)) {
+			if (wordStorage.wordExists("commonwords", content)) {
 				found = true;
 			}
 		}
@@ -259,7 +365,7 @@ public class RegularFunction {
 		content = General.removeQuotes(content);
 		if ((content != null) && (content.length() > 0)) {
 			content = content.toLowerCase();
-			if (wordStorage.wordExists(wordStorage.REGULAR_WORDS, content)) {
+			if (wordStorage.wordExists("regularwords", content)) {
 				found = true;
 			}
 		}
@@ -338,7 +444,7 @@ public class RegularFunction {
 	protected boolean coordinatingconjunction(String part, WordToken wordToken, Section section, List<String> params) {
 		boolean found = false;
 		String lemma = wordToken.getLemma();
-		if (this.wordStorage.wordExists(wordStorage.CONJUNCTION_WORDS, lemma)) {
+		if (this.wordStorage.wordExists("conjunction", lemma)) {
 			found = true;
 		}
 		return found;
@@ -356,7 +462,7 @@ public class RegularFunction {
  		isVerb = this.verb("postag", wordToken, section, params);
  		pastParticiple = wordStorage.getPostagSearch().isPostag(postagCurrent, "verb", "pastparticiple");
  		isGerund = wordStorage.getPostagSearch().isGerund(tokenCurrent, postagCurrent);
- 		isAuxiliary = wordStorage.wordExists(wordStorage.AUXILLIARY, lemmaCurrent);
+ 		isAuxiliary = wordStorage.wordExists("auxiliaryverbs", lemmaCurrent);
  		isLinked = this.verblinked("postag", wordToken, section, params);
         if (this.perfectpasttense(part,wordToken,section,params)) {
         	found = true;
@@ -455,11 +561,11 @@ public class RegularFunction {
                 if (beforeIndex>=0) {
                     previousToken = section.getCurrentSentence().get(beforeIndex);
 			        lemmaBefore = previousToken.getLemma();
-			        auxExist = wordStorage.wordExists(wordStorage.AUXILLIARY, lemmaBefore);
+			        auxExist = wordStorage.wordExists("auxiliaryverbs", lemmaBefore);
                 }
 		    }
 		    if (auxExist) {
-     			auxExist = wordStorage.wordExists(wordStorage.AUXILLIARY, lemmaCurrent);
+     			auxExist = wordStorage.wordExists("auxiliaryverbs", lemmaCurrent);
      			if ((!auxExist) && (!perfectpasttense(part, wordToken, section, params))) {
      				found = true;
      			}
@@ -467,6 +573,25 @@ public class RegularFunction {
 		}
      	return found;
 	}
+	
+	protected boolean causative(String part, WordToken wordToken, Section section, List<String> params) {
+		/* The causative is formed with 'have + object + past participle' */
+		/* The causative structure: <subject> + <causative_verb> + <agent> + <verb> + <subject> */
+		/* causative verbs: have, make, let, get, ask */ 
+		boolean found=false, auxExist=false, foundVerb=false, adverb=false;
+		Integer wordIndex = wordToken.getIndex(), afterIndex = 0;
+		Integer wordLimit = section.getWordLimit();
+		String[] causative_verbs= {"let","permit","allow","make","force","require","have","get","help"};
+		String postagCurrent = wordToken.getPostag();
+		String lemmaBefore = "", lemmaCurrent = "", postagBefore="";
+		List<String> causativeList = Arrays.asList(causative_verbs);
+		WordToken previousToken = null;
+		
+		
+     	return found;
+	}
+	
+	
 	
 	protected boolean futureTense(String part, WordToken wordToken, Section section, List<String >parameters) {
 		WordToken nextWordToken = null;
@@ -480,7 +605,7 @@ public class RegularFunction {
 	
 	protected boolean preposition(String part, WordToken wordToken, Section section, List<String >parameters) {
 		Boolean found = false, verb=false;
-		String[] preposition_words= {"through", "since","to", "of", "at", "by", "from", "into", "on", "in", "under", "off", "over", "down"};
+		String[] preposition_words= {"through", "since","to", "of", "at", "by", "for", "from", "into", "in", "under", "on", "off", "out", "over", "down", "up", "with"};
 		String[] preposition_nouns = {"PRP", "NN", "NNS"};
 		List<String> words = Arrays.asList(preposition_words);
 		List<String> nouns = Arrays.asList(preposition_nouns);
@@ -564,7 +689,7 @@ public class RegularFunction {
 		}
 		if (pastExist) {
 			lemmaCurrent = wordToken.getLemma();
-			auxExist = wordStorage.wordExists(wordStorage.AUXILLIARY, lemmaCurrent);
+			auxExist = wordStorage.wordExists("auxiliaryverbs", lemmaCurrent);
      		pastParticiple = wordStorage.getPostagSearch().isPostag(postagCurrent, "verb", "pastparticiple");
      		if ((!auxExist) && (pastParticiple)) {
      			found = true;
@@ -587,7 +712,7 @@ public class RegularFunction {
 			content = content.toLowerCase();
 			if (content.startsWith(param)) {
 				word = content.substring(param.length(),content.length());
-				if (wordStorage.wordExists(WordStorage.COMMON_WORDS, word)) {
+				if (wordStorage.wordExists("commonwords", word)) {
 					found = true;
 				}
 			}
@@ -679,6 +804,8 @@ public class RegularFunction {
 			value = wordToken.getLemma();
 		} else if (part.equalsIgnoreCase("postag")) {
 			value = wordToken.getPostag();
+		} else if (part.equalsIgnoreCase("type")) {
+			value = wordToken.getDependency();
 		}
 		return value;
 	}
@@ -699,7 +826,7 @@ public class RegularFunction {
 	     Integer wordIndex = 0, wordLimit = 0;
 		 Section clausesSection = new Section();
 		 String word = "";
-	     List<String> conjunctions = wordStorage.getWordList(wordStorage.CONJUNCTION_WORDS);
+	     List<String> conjunctions = wordStorage.getWordList("conjuntion");
 	     List<WordToken> sentence = section.getCurrentSentence();
 	     List<WordToken> clause = new ArrayList<>();
 	     WordToken wordToken = null;

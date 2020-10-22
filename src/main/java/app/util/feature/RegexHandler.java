@@ -14,13 +14,15 @@ public class RegexHandler {
       private TextBlock textBlock;
       private RegexLibrary regexLibrary;
       
-	  public RegexHandler(String regex, RegularFunction regularFunction, WordStorage wordStorage, LanguageTree languageTree,  WebApplicationContext applicationContext) {
-          this.regularFunction = regularFunction;
+	  public RegexHandler(String regex, RegularFunction regularFunction, WordStorage wordStorage, LanguageTree languageTree, RegexLibrary regexLibrary,  WebApplicationContext applicationContext) {
+          String refinedRegex="";
+		  this.regularFunction = regularFunction;
           this.regularFunction.setLanguageTree(languageTree);
           this.textBlock = new TextBlock();
-          this.regexLibrary = new RegexLibrary(applicationContext);
+          this.regexLibrary = regexLibrary;
 		  textLogicExpressionParser = new TextRegularExpressionParser(regularFunction, wordStorage, textBlock, regexLibrary);
-		  logicExpression = textLogicExpressionParser.process(regex);
+		  refinedRegex = preProcess(regex);
+		  logicExpression = textLogicExpressionParser.process(refinedRegex);
 	  }
 	  
 	  public Integer matchescount(List<WordToken> wordTokenList, Section section) {
@@ -88,4 +90,14 @@ public class RegexHandler {
 		  match = match + "]";
 		  return match;
 	  }
+	  
+	  
+	  private String preProcess(String regex) {
+		  String refinedRegex = regex;
+		  if (regex.contains("<...>")) {
+			  refinedRegex = regex.replace("<...>", "<token=anyword()>*");
+		  }
+		  return refinedRegex;
+	  }
+	  
 }

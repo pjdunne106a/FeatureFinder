@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.json.simple.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -25,11 +26,13 @@ public class RegexService {
 	@Autowired
 	LanguageTree  languageTree;
 	@Autowired
+	RegexLibrary  regexLibrary;
+	@Autowired
 	Documentation documentation;
 	@Autowired
 	private WebApplicationContext applicationContext;
 	
-	@RequestMapping(value = "/regexcount", method = RequestMethod.GET)
+	@RequestMapping(value = "/singleregexrun", method = RequestMethod.GET)
     public String regexcount( @RequestParam String granularity, @RequestParam String text, @RequestParam String firstregex, @RequestParam(required = false) String secondregex ) { 
 	  Matcher matcher1 = null, matcher2 = null;
 	  Double matches1 = new Double(0);
@@ -42,13 +45,13 @@ public class RegexService {
 	  String matches = "";
 	  if ((firstregex!=null) && (firstregex.length()>0)) {
 		  regularFunction.initialise();
-		  matcher1 = new Matcher(firstregex, regularFunction, wordStorage, languageTree, applicationContext);
+		  matcher1 = new Matcher(firstregex, regularFunction, wordStorage, languageTree, regexLibrary, applicationContext);
 		  count1 = matcher1.matchcount(section, granularity);
 		  matches = matches + "firstregex:"+String.valueOf(count1) +",\n";
 	  }
 	  if ((secondregex!=null) && (secondregex.length()>0)) {
 		  regularFunction.initialise();
-		  matcher2 = new Matcher(secondregex, regularFunction, wordStorage, languageTree, applicationContext);
+		  matcher2 = new Matcher(secondregex, regularFunction, wordStorage, languageTree, regexLibrary, applicationContext);
 		  count2 = matcher2.matchcount(section, granularity);
 		  matches = matches + "secondregex:"+String.valueOf(count2) +",\n";
 	  }
@@ -69,12 +72,71 @@ public class RegexService {
       return matches;
     }
 	
-	@RequestMapping(value = "/regextext", method = RequestMethod.GET)
-    public String regextext(@RequestParam String text, @RequestParam String granularity, @RequestParam String regex ) { 
+	
+	@RequestMapping(value = "/groupregexrun", method = RequestMethod.GET)
+    public String groupregexrun( @RequestParam String granularity, @RequestParam String text, @RequestParam String regexlist ) { 
+	  Matcher matcher = null;
+	  Map<String, Object> groupList;
+	  Double matches1 = new Double(0);
+	  Double matches2 = new Double(0);
+	  Integer wordCount = 0;
+	  JSONArray jsonArray = null;
+	  Double average = new Double(0);
+	  Double divisor;
+	  Integer count1=0, count2=0;
 	  Section section = englishParser.parseTextToSentence(text);
-	  Matcher matcher = new Matcher(regex, regularFunction, wordStorage, languageTree, applicationContext);
-      String matches = matcher.matchtext(section, granularity);
-      return String.valueOf(matches);
+	  String matches = "", regex="", results="", itemStr="", jsonStr = "";
+	  String[] regexArray = null;
+	  if ((regexlist!=null) && (regexlist.length()>0)) {
+		  results = "[";
+		  regexArray = regexlist.split(",");
+		  groupList = regexLibrary.getGroupNames();
+		  for (String key: regexArray) {
+		      jsonArray = (JSONArray) groupList.get(key);
+		      System.out.println("**********JSON Array:"+jsonArray.toString());
+		      if (jsonArray!=null) {
+                 results = results + key + ":[";				 
+			     for (int i=0; i<jsonArray.size(); i++) {
+			             jsonStr = (String)jsonArray.get(i);
+			             System.out.println("**********JSON Item:"+i+"  JsonStr:"+jsonStr);
+ 			             itemStr = regexLibrary.getFeatureRegex(key, jsonStr);
+ 			             System.out.println("**********JSON Item:"+i+"  ItemStr:"+itemStr);
+			             if (itemStr != null) {
+			            	 regularFunction.initialise();
+			            	 matcher = new Matcher(itemStr, regularFunction, wordStorage, languageTree, regexLibrary, applicationContext);
+			            	 wordCount = matcher.matchcount(section, granularity);
+			    	         results = results + jsonStr + ":" + wordCount + ",";
+			    	     }
+			     }
+   		       results = results + "]";  
+	        }
+		  }		 
+	   results = results + "]";
+	  }	  
+      return results;
+    }
+	
+	
+	@RequestMapping(value = "/runregex", method = RequestMethod.GET)
+    public String runregex(@RequestParam String text, @RequestParam String granularity, @RequestParam String regex ) { 
+	  regularFunction.initialise();
+	  Section section = englishParser.parseTextToSentence(text);
+	  Matcher matcher = new Matcher(regex, regularFunction, wordStorage, languageTree, regexLibrary, applicationContext);
+      Integer count = matcher.matchcount(section, granularity);
+      String matches = "Regex matches:"+String.valueOf(count);
+      return matches;
+    }
+	
+	@RequestMapping(value = "/runfeature", method = RequestMethod.GET)
+    public String runfeature(@RequestParam String featurename, @RequestParam String text, @RequestParam String granularity) { 
+	  regularFunction.initialise();
+	  String response="";
+	  String featureRegex = regexLibrary.getFeatureRegex(featurename);
+	  Section section = englishParser.parseTextToSentence(text);
+	  Matcher matcher = new Matcher(featureRegex, regularFunction, wordStorage, languageTree, regexLibrary, applicationContext);
+      Integer matches = matcher.matchcount(section, granularity);
+      response = "Feature matches:"+String.valueOf(matches);
+      return response;
     }
 	
 	@RequestMapping(value = "/postagtext", method = RequestMethod.GET)
@@ -82,6 +144,12 @@ public class RegexService {
 	  Section section = englishParser.parseTextToText(text);
 	  List<WordToken> wordTokenList = section.getSentenceAtIndex(0);
       return wordTokenList.toString();
+    }
+	
+	@RequestMapping(value = "/texttodepgraph", method = RequestMethod.GET)
+    public String texttodepgraph(@RequestParam String text ) { 
+	  String graphString = englishParser.textToGraph(text);
+      return graphString;
     }
 	
 	@RequestMapping(value = "/parsetext", method = RequestMethod.GET)
@@ -92,6 +160,18 @@ public class RegexService {
 	  languageTree.setRegularFunction(regularFunction);
 	  results = languageTree.doGrammar(section);
       return results;
+    }
+	
+	@RequestMapping(value = "/grouplist", method = RequestMethod.GET)
+    public String grouplist() {
+	  String regexes = regexLibrary.getGroupList();	
+      return regexes;
+    }
+	
+	@RequestMapping(value = "/featurelist", method = RequestMethod.GET)
+    public String featurelist() {
+	  String regexes = regexLibrary.getFeatureList();	
+      return regexes;
     }
 	
 	@RequestMapping(value = "/documentation", method = RequestMethod.GET)
@@ -111,7 +191,7 @@ public class RegexService {
 	  String regex="<token=passive()>";
 	  String granularity="text";
 	  Section section = englishParser.parseTextToSentence(text);
-	  Matcher matcher = new Matcher(regex, regularFunction, wordStorage,languageTree, applicationContext);
+	  Matcher matcher = new Matcher(regex, regularFunction, wordStorage,languageTree, regexLibrary, applicationContext);
 	  String matches = null;
 	  Map<String, String> results = new HashMap<>();
       for (String str: texts) {
@@ -154,7 +234,7 @@ public class RegexService {
 	  "I will have loved"};
 	  String regex="<token=active()>";
 	  String granularity="text";
-	  Matcher matcher = new Matcher(regex, regularFunction, wordStorage, languageTree, applicationContext);
+	  Matcher matcher = new Matcher(regex, regularFunction, wordStorage, languageTree, regexLibrary, applicationContext);
 	  String matches = null;
 	  Map<String, String> results = new HashMap<>();
       for (String str: texts) {

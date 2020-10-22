@@ -8,7 +8,7 @@ import org.json.simple.JSONArray;
 import edu.washington.cs.knowitall.logic.Expression.Arg;
 
 public class TextLogicBaseExpression extends Arg<WordToken> {
-	   private static String[] PART_LIST = {"postag","POSTAG","token","TOKEN","lemma","LEMMA","text","TEXT","phrase","PHRASE"};
+	   private static String[] PART_LIST = {"postag","POSTAG","token","TOKEN","lemma","LEMMA","type","TYPE","text","TEXT","phrase","PHRASE"};
        private String part;
        private String value;
        private String valueType;
@@ -35,25 +35,28 @@ public class TextLogicBaseExpression extends Arg<WordToken> {
 			   this.part = part.toLowerCase();
 			   this.value = regex.substring(part.length()+1,regex.length());
 			   this.valueType = this.getValueType(value);
+			   System.out.println("   Part:"+part+"     ValueType:"+valueType+"     Value:"+value+"      Regex:"+regex);
 		   }
 	   }
 	   
 	   public boolean apply(WordToken wordToken) {
 		   Boolean found = false;
-		   //System.out.println("**Apply, Part:"+part+"  "+valueType+"**  Value:"+value);
-		   if (!part.equalsIgnoreCase("text")) {
-		       switch (valueType) {
-		       case "string": {found = checkString(part, value, wordToken);}; break;
-		       case "name": {found = checkName(part, value, wordToken);}; break;
-		       case "list": {found = checkList(part, value, wordToken);}; break;
-		       case "function": {found= checkFunction(part, valueType, value, wordToken, textBlock);}; break;
-		       case "predefinedlist": {found= checkPreDefinedList(part, valueType, value, wordToken, textBlock, regexLibrary);}; break;
-		       } 
-		   } else {
+		   System.out.println("**Apply, Part:"+part+"  "+valueType+"**  Value:"+value);
+		   if ((valueType!=null) && (part!=null)) {
+			   if (!part.equalsIgnoreCase("text")) {
+		           switch (valueType) {
+		             case "string": {found = checkString(part, value, wordToken);}; break;
+		             case "name": {found = checkName(part, value, wordToken);}; break;
+		             case "list": {found = checkList(part, value, wordToken);}; break;
+		             case "function": {found= checkFunction(part, valueType, value, wordToken, textBlock);}; break;
+		             case "predefinedlist": {found= checkPreDefinedList(part, valueType, value, wordToken, textBlock, regexLibrary);}; break;
+		           } 
+		        } else {
 		             found = this.checkText(part, value, valueType, wordToken, textBlock);
-		   }
+		        }   
+		    }
 		   System.out.println("** TextLogicExpression:"+found);
-		   return found ;
+		   return found;
 	   }
 	   
 	   private Boolean checkText(String part, String value, String valueType, WordToken wordToken, TextBlock textBlock) {
@@ -241,7 +244,9 @@ public class TextLogicBaseExpression extends Arg<WordToken> {
     		  content = wordToken.getToken();
     	  } else if (part.equalsIgnoreCase("lemma")) {
     		  content = wordToken.getLemma();
-    	  } 
+    	  }  else if (part.equalsIgnoreCase("type")) {
+        		  content = wordToken.getDependency();
+          } 
     	  content = General.removeQuotes(content);
     	  value = General.removeQuotes(value);
     	  if (value.equalsIgnoreCase(content)) {
@@ -262,7 +267,9 @@ public class TextLogicBaseExpression extends Arg<WordToken> {
     		  content = wordToken.getToken();
     	  } else if (part.equalsIgnoreCase("lemma")) {
     		  content = wordToken.getLemma();
-    	  } 
+    	  } else if (part.equalsIgnoreCase("type")) {
+    		  content = wordToken.getDependency();
+    	  }  
     	  params = General.getListParameters(value);
     	  content = General.removeQuotes(content);
     	  System.out.println("** Params:"+params);
@@ -315,7 +322,9 @@ public class TextLogicBaseExpression extends Arg<WordToken> {
     	        	  content = wordToken.getToken();
     	          } else if (part.equalsIgnoreCase("lemma")) {
     	        	  content = wordToken.getLemma();
-    	          }
+    	          } else if (part.equalsIgnoreCase("type")) {
+    	    		  content = wordToken.getDependency();
+    	    	  } 
     	          if ((jsonArray != null) && (jsonArray.contains(content))) {
     	        	  found = true;
     	          }

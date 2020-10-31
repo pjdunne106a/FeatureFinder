@@ -143,7 +143,22 @@ public class RegexService {
     public String postagtext(@RequestParam String text ) { 
 	  Section section = englishParser.parseTextToText(text);
 	  List<WordToken> wordTokenList = section.getSentenceAtIndex(0);
-      return wordTokenList.toString();
+	  String reply = "[";
+	  for (WordToken wordToken:wordTokenList) {
+		  reply = reply + "{";
+		  reply = reply + "\"token\":";
+		  reply = reply + "\""+wordToken.getToken()+"\",";
+		  reply = reply + "\"lemma\":";
+		  reply = reply + "\""+wordToken.getLemma()+"\",";
+		  reply = reply + "\"postag\":";
+		  reply = reply + "\""+wordToken.getPostag()+"\",";
+		  reply = reply + "\"dependency\":";
+		  reply = reply + "\""+wordToken.getDependency()+"\"";
+		  reply = reply + "},";
+	  }
+	  reply = reply.substring(0,reply.length()-1);
+	  reply = reply + "]";
+      return reply;
     }
 	
 	@RequestMapping(value = "/texttodepgraph", method = RequestMethod.GET)

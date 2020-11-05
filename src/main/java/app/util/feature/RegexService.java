@@ -6,17 +6,22 @@ import java.util.Map;
 
 import org.json.simple.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.WebApplicationContext;
 
+import app.util.database.DocumentDatabase;
+import app.util.database.FeatureDocument;
 import io.swagger.annotations.ApiOperation;
  
 @RestController
 public class RegexService { 
 
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 	@Autowired
 	private EnglishParser englishParser;
 	@Autowired
@@ -29,6 +34,8 @@ public class RegexService {
 	RegexLibrary  regexLibrary;
 	@Autowired
 	Documentation documentation;
+	@Autowired
+	DocumentDatabase documentDatabase;
 	@Autowired
 	private WebApplicationContext applicationContext;
 	
@@ -137,6 +144,46 @@ public class RegexService {
       Integer matches = matcher.matchcount(section, granularity);
       response = "Feature matches:"+String.valueOf(matches);
       return response;
+    }
+	
+	@RequestMapping(value = "/adddocument", method = RequestMethod.GET)
+    public String adddocument(@RequestParam String documentname, @RequestParam String documenttype, @RequestParam String documentcontents, @RequestParam String documentdescription) { 
+	  String response = "";
+	  documentDatabase.setJdbcTemplate(jdbcTemplate);
+	  documentDatabase.addDocument(documentname, documenttype, documentcontents, documentdescription);
+      return response;
+    }
+	
+	@RequestMapping(value = "/getdocument", method = RequestMethod.GET)
+    public String getdocument(@RequestParam String documentid) { 
+		 FeatureDocument document = null;
+		 documentDatabase.setJdbcTemplate(jdbcTemplate);
+		 document = documentDatabase.getDocument(Integer.valueOf(documentid));
+	     return document.toString();
+    }
+	
+	@RequestMapping(value = "/getdocuments", method = RequestMethod.GET)
+    public List<FeatureDocument> getdocuments(@RequestParam String type) { 
+		 List<FeatureDocument> documents = null;
+		 documentDatabase.setJdbcTemplate(jdbcTemplate);
+		 documents = documentDatabase.getDocuments(type);
+	     return documents;
+    }
+	
+	@RequestMapping(value = "/updatedocument", method = RequestMethod.GET)
+    public String updatedocument(@RequestParam String id, @RequestParam String name, @RequestParam String type, @RequestParam String contents, @RequestParam String description) { 
+		 String reply = null;
+		 documentDatabase.setJdbcTemplate(jdbcTemplate);
+		 reply = documentDatabase.updateDocument(Integer.valueOf(id), name, type, contents, description);
+	     return reply;
+    }
+	
+	@RequestMapping(value = "/deletedocument", method = RequestMethod.GET)
+    public String deletedocument(@RequestParam String documentid) { 
+		 String reply = null;
+		 documentDatabase.setJdbcTemplate(jdbcTemplate);
+		 reply = documentDatabase.deleteDocument(Integer.valueOf(documentid));
+	     return reply;
     }
 	
 	@RequestMapping(value = "/postagtext", method = RequestMethod.GET)

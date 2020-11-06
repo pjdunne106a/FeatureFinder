@@ -232,7 +232,8 @@ public class RegexService {
 	
 	@RequestMapping(value = "/featurelist", method = RequestMethod.GET)
     public String featurelist() {
-	  String regexes = regexLibrary.getFeatureList();	
+	  documentDatabase.setJdbcTemplate(jdbcTemplate);	
+	  String regexes = regexLibrary.getFeatureList(documentDatabase);	
       return regexes;
     }
 	

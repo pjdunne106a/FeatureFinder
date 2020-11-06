@@ -76,9 +76,9 @@
             <version>3.16.1</version>
         </dependency>
         <dependency>
-            <groupId>org.hibernate.dialect</groupId>
-            <artifactId>sqlite-dialect</artifactId>
-            <version>0.1.0</version>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>5.4.20.Final</version>
         </dependency>
 		<dependency>
 			<groupId>com.googlecode.json-simple</groupId>

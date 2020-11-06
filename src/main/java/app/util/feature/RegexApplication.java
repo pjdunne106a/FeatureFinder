@@ -27,7 +27,7 @@ public class RegexApplication implements CommandLineRunner {
     @Override
 	public void run(String... args) throws Exception {
 		//Create the database table:
-		//jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS featuredocumentstore(id INTEGER PRIMARY KEY,name TEXT,type TEXT,description TEXT,contents BLOB)");
+		jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS featuredocumentstore(id INTEGER PRIMARY KEY,name TEXT,type TEXT,description TEXT,contents BLOB)");
 		
 		//Insert a record:
 		//jdbcTemplate.execute("INSERT INTO beers VALUES ('Stella')");

@@ -10,6 +10,9 @@ import org.json.simple.JSONObject;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.WebApplicationContext;
 
+import app.util.database.DocumentDatabase;
+import app.util.database.FeatureDocument;
+
 @Component
 public class RegexLibrary {
    Map<String, Object> groupregexes;
@@ -96,8 +99,8 @@ public class RegexLibrary {
 	   return exprStr;
    }
    
-   public String getFeatureList() {
-	   Integer count = 0, index = 0, number=0;
+   public String getFeatureList(DocumentDatabase documentDatabase) {
+	   Integer count = 0, index = 0, number=0, size=0;
 	   Set<String> list = this.featureregexes.keySet();
 	   List<String> jsonList = new ArrayList<>(list);
 	   String jsonStr="", regexStr="", itemStr="", key="", exprStr="[";
@@ -107,21 +110,15 @@ public class RegexLibrary {
 	   functionList = RegularFunction.FUNCTION_FEATURES;
 	   for (String functionStr:functionList) {
 		   parts = functionStr.split(":");
-		   jsonStr = "{\"name\":\""+parts[0]+"\",\"description\":\""+parts[1]+"\",\"type\":\""+parts[2]+"\",\"group\":\""+parts[3]+"\",\"regex\":\""+parts[4]+"\"}";
+		   jsonStr = "{\"name\":\""+parts[0]+"\",\"description\":\""+parts[1]+"\",\"type\":\""+parts[2]+"\",\"group\":\""+parts[3]+"\",\"contents\":\""+parts[4]+"\"}";
 		   exprStr = exprStr + jsonStr + ",";
 	   }
 	   number = jsonList.size();
-	   for (int k=0; k<number; k++)  {
-		   key = jsonList.get(k);
-		   jsonItem = (JSONObject)featureregexes.get(key);
-		   if (jsonItem != null) {
-		    	regexStr = jsonItem.toString();
-		    	exprStr = exprStr + regexStr;
-		   }
-		   count++;
-		   if (count<(number)) {
-			  exprStr = exprStr + ",";
-		   }	  
+	   exprStr = exprStr.substring(0, exprStr.length()-1);
+	   List<FeatureDocument> featureDocuments = documentDatabase.getDocuments("regex");
+	   size = featureDocuments.size();
+	   for (FeatureDocument featureDocument:featureDocuments)  {
+		   exprStr = exprStr + "," + featureDocument.toString();
 	   }
 	   exprStr = exprStr + "]";
 	   return exprStr;

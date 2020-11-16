@@ -306,7 +306,7 @@ public class TextLogicBaseExpression extends Arg<WordToken> {
       
       private Boolean checkPreDefinedList(String part, String valueType, String value, WordToken wordToken, TextBlock textBlock, RegexLibrary regexLibrary) {
     	  boolean found = false;
-    	  JSONArray jsonArray = null;
+    	  String regex = null;
     	  String content = "";
     	  if (value.startsWith("$")) {
     		  value = value.substring(1, value.length());
@@ -315,7 +315,7 @@ public class TextLogicBaseExpression extends Arg<WordToken> {
     	  if (value.equalsIgnoreCase("commonword")) {
     		  found = this.wordStorage.wordExists(value, wordToken.getToken());  
     	  } else {
-    	          jsonArray = regexLibrary.getDefinedList(value);
+    	          regex = regexLibrary.getFeatureRegex(value);
     	          if (part.equalsIgnoreCase("postag")) {
     	        	  content = wordToken.getPostag();
     	          } else if (part.equalsIgnoreCase("token")) {
@@ -325,7 +325,7 @@ public class TextLogicBaseExpression extends Arg<WordToken> {
     	          } else if (part.equalsIgnoreCase("type")) {
     	    		  content = wordToken.getDependency();
     	    	  } 
-    	          if ((jsonArray != null) && (jsonArray.contains(content))) {
+    	          if (regex != null) {
     	        	  found = true;
     	          }
     	  }

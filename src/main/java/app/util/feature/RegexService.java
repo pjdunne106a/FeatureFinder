@@ -3,6 +3,7 @@ package app.util.feature;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import org.json.simple.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +38,8 @@ public class RegexService {
 	@Autowired
 	DocumentDatabase documentDatabase;
 	@Autowired
+	FeatureService  featureService;
+	@Autowired
 	private WebApplicationContext applicationContext;
 	
 	@RequestMapping(value = "/singleregexrun", method = RequestMethod.GET)
@@ -50,6 +53,8 @@ public class RegexService {
 	  Integer count1=0, count2=0;
 	  Section section = englishParser.parseTextToSentence(text);
 	  String matches = "";
+	  documentDatabase.setJdbcTemplate(jdbcTemplate);
+	  regexLibrary.setDependencies(documentDatabase);
 	  if ((firstregex!=null) && (firstregex.length()>0)) {
 		  regularFunction.initialise();
 		  matcher1 = new Matcher(firstregex, regularFunction, wordStorage, languageTree, regexLibrary, applicationContext);
@@ -80,53 +85,11 @@ public class RegexService {
     }
 	
 	
-	@RequestMapping(value = "/groupregexrun", method = RequestMethod.GET)
-    public String groupregexrun( @RequestParam String granularity, @RequestParam String text, @RequestParam String regexlist ) { 
-	  Matcher matcher = null;
-	  Map<String, Object> groupList;
-	  Double matches1 = new Double(0);
-	  Double matches2 = new Double(0);
-	  Integer wordCount = 0;
-	  JSONArray jsonArray = null;
-	  Double average = new Double(0);
-	  Double divisor;
-	  Integer count1=0, count2=0;
-	  Section section = englishParser.parseTextToSentence(text);
-	  String matches = "", regex="", results="", itemStr="", jsonStr = "";
-	  String[] regexArray = null;
-	  if ((regexlist!=null) && (regexlist.length()>0)) {
-		  results = "[";
-		  regexArray = regexlist.split(",");
-		  groupList = regexLibrary.getGroupNames();
-		  for (String key: regexArray) {
-		      jsonArray = (JSONArray) groupList.get(key);
-		      System.out.println("**********JSON Array:"+jsonArray.toString());
-		      if (jsonArray!=null) {
-                 results = results + key + ":[";				 
-			     for (int i=0; i<jsonArray.size(); i++) {
-			             jsonStr = (String)jsonArray.get(i);
-			             System.out.println("**********JSON Item:"+i+"  JsonStr:"+jsonStr);
- 			             itemStr = regexLibrary.getFeatureRegex(key, jsonStr);
- 			             System.out.println("**********JSON Item:"+i+"  ItemStr:"+itemStr);
-			             if (itemStr != null) {
-			            	 regularFunction.initialise();
-			            	 matcher = new Matcher(itemStr, regularFunction, wordStorage, languageTree, regexLibrary, applicationContext);
-			            	 wordCount = matcher.matchcount(section, granularity);
-			    	         results = results + jsonStr + ":" + wordCount + ",";
-			    	     }
-			     }
-   		       results = results + "]";  
-	        }
-		  }		 
-	   results = results + "]";
-	  }	  
-      return results;
-    }
-	
-	
 	@RequestMapping(value = "/runregex", method = RequestMethod.GET)
     public String runregex(@RequestParam String text, @RequestParam String granularity, @RequestParam String regex ) { 
 	  regularFunction.initialise();
+	  documentDatabase.setJdbcTemplate(jdbcTemplate);
+	  regexLibrary.setDependencies(documentDatabase);
 	  Section section = englishParser.parseTextToSentence(text);
 	  Matcher matcher = new Matcher(regex, regularFunction, wordStorage, languageTree, regexLibrary, applicationContext);
       Integer count = matcher.matchcount(section, granularity);
@@ -138,12 +101,24 @@ public class RegexService {
     public String runfeature(@RequestParam String featurename, @RequestParam String text, @RequestParam String granularity) { 
 	  regularFunction.initialise();
 	  String response="";
+	  documentDatabase.setJdbcTemplate(jdbcTemplate);
+	  regexLibrary.setDependencies(documentDatabase);
 	  String featureRegex = regexLibrary.getFeatureRegex(featurename);
 	  Section section = englishParser.parseTextToSentence(text);
 	  Matcher matcher = new Matcher(featureRegex, regularFunction, wordStorage, languageTree, regexLibrary, applicationContext);
       Integer matches = matcher.matchcount(section, granularity);
       response = "Feature matches:"+String.valueOf(matches);
       return response;
+    }
+	
+	@RequestMapping(value = "/runfeaturegroup", method = RequestMethod.GET)
+    public CompletableFuture<List<FeatureResult>> runfeaturegroup(@RequestParam String featuregroupid, @RequestParam String documentgroupid,  @RequestParam String language, @RequestParam String granularity) throws InterruptedException { 
+	  regularFunction.initialise();
+	  String response="";
+	  documentDatabase.setJdbcTemplate(jdbcTemplate);
+	  regexLibrary.setDependencies(documentDatabase);
+	  featureService.setDependencies(documentDatabase, regexLibrary, englishParser, wordStorage, languageTree, applicationContext);
+	  return featureService.runFeatureGroup(Integer.valueOf(featuregroupid), Integer.valueOf(documentgroupid), language, granularity);
     }
 	
 	@RequestMapping(value = "/adddocument", method = RequestMethod.GET)
@@ -158,7 +133,7 @@ public class RegexService {
     public String getdocument(@RequestParam String documentid) { 
 		 FeatureDocument document = null;
 		 documentDatabase.setJdbcTemplate(jdbcTemplate);
-		 document = documentDatabase.getDocument(Integer.valueOf(documentid));
+		 document = documentDatabase.getDocumentById(Integer.valueOf(documentid));
 	     return document.toString();
     }
 	
@@ -224,16 +199,11 @@ public class RegexService {
       return results;
     }
 	
-	@RequestMapping(value = "/grouplist", method = RequestMethod.GET)
-    public String grouplist() {
-	  String regexes = regexLibrary.getGroupList();	
-      return regexes;
-    }
-	
 	@RequestMapping(value = "/featurelist", method = RequestMethod.GET)
     public String featurelist() {
-	  documentDatabase.setJdbcTemplate(jdbcTemplate);	
-	  String regexes = regexLibrary.getFeatureList(documentDatabase);	
+	  documentDatabase.setJdbcTemplate(jdbcTemplate);
+	  regexLibrary.setDependencies(documentDatabase);
+	  String regexes = regexLibrary.getFeatureList();	
       return regexes;
     }
 	

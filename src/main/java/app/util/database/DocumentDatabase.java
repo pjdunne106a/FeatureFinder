@@ -17,8 +17,19 @@ public class DocumentDatabase {
 		this.jdbcTemplate = jdbcTemplate;
 	}
 	
-	public FeatureDocument getDocument(Integer id) {
+	public FeatureDocument getDocumentById(Integer id) {
 		List<FeatureDocument> documents = jdbcTemplate.query("SELECT * FROM featuredocumentstore WHERE id="+id,(resultSet, rowNum) -> new FeatureDocument(resultSet.getInt("id"),resultSet.getString("name"),resultSet.getString("type"),resultSet.getBinaryStream("contents"),resultSet.getString("description")));
+        if ((documents!=null) && (documents.size()>=0)) {
+        	return documents.get(0);
+        } else {
+        	return null;
+        }
+	}
+	
+	public FeatureDocument getDocument(String name, String type) {
+		String query = "SELECT * FROM featuredocumentstore WHERE name=\""+name+"\" and type=\""+type+"\"";
+		System.out.println("***Query:"+query);
+		List<FeatureDocument> documents = jdbcTemplate.query(query,(resultSet, rowNum) -> new FeatureDocument(resultSet.getInt("id"),resultSet.getString("name"),resultSet.getString("type"),resultSet.getBinaryStream("contents"),resultSet.getString("description")));
         if ((documents!=null) && (documents.size()>=0)) {
         	return documents.get(0);
         } else {
